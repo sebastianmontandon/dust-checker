@@ -1,19 +1,15 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { FilterBar } from './components/FilterBar';
 import { ItemTable } from './components/ItemTable';
-import { AIAnalyst } from './components/AIAnalyst';
 import { ProgressBar } from './components/ProgressBar';
 import { Currency, FilterState, SaleType, SortState, TradeItem } from './types';
 import { fetchTradeData } from './services/poeService';
-import { analyzeMarket } from './services/geminiService';
 import { CURRENCIES } from './constants';
 
 const App: React.FC = () => {
   const [items, setItems] = useState<TradeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Ratio puede ser editado manualmente. Si es '' es automático.
@@ -75,7 +71,6 @@ const App: React.FC = () => {
 
     setLoading(true);
     setItems([]); 
-    setAiAnalysis(null);
     setProgress({ current: 0, total: 0, currentItemName: '...' });
     
     try {
@@ -126,14 +121,6 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleAiAnalyze = async () => {
-      if (items.length === 0) return;
-      setAiLoading(true);
-      const analysis = await analyzeMarket(items);
-      setAiAnalysis(analysis);
-      setAiLoading(false);
-  };
-
   const adjustRatio = (amount: number) => {
     setCurrentRatio(prev => {
       const val = typeof prev === 'string' ? parseFloat(prev) || 0 : prev;
@@ -174,7 +161,7 @@ const App: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-poe-border pb-6">
-          <div>
+          <div className="flex flex-col items-center md:items-start">
             <h1 className="text-3xl md:text-4xl font-serif text-poe-gold tracking-widest drop-shadow-md text-center md:text-left">
               EXILE DUST CALCULATOR
             </h1>
@@ -183,11 +170,11 @@ const App: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center h-full">
             {/* Ratio Input */}
             <div className="flex flex-col items-center">
                 <label className="text-[10px] uppercase text-poe-goldDim tracking-wider mb-1">Divine Ratio (Editable)</label>
-                <div className="flex items-center bg-black/40 rounded-md px-3 py-1.5 border border-poe-border shadow-inner">
+                <div className="flex items-center bg-black/40 rounded-md px-3 py-1.5 border border-poe-border shadow-inner h-10">
                     
                     {/* Divine Icon */}
                     <div className="flex items-center mr-3">
@@ -197,10 +184,10 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Input Control */}
-                    <div className="flex items-center bg-poe-dark rounded border border-poe-border/50">
+                    <div className="flex items-center bg-poe-dark rounded border border-poe-border/50 h-8">
                       <button 
                         onClick={() => adjustRatio(-1)}
-                        className="w-8 h-8 flex items-center justify-center text-poe-gold hover:bg-poe-gold/10 hover:text-white transition-colors font-bold text-lg border-r border-poe-border/30"
+                        className="w-8 h-full flex items-center justify-center text-poe-gold hover:bg-poe-gold/10 hover:text-white transition-colors font-bold text-lg border-r border-poe-border/30"
                       >
                         -
                       </button>
@@ -212,7 +199,7 @@ const App: React.FC = () => {
                       />
                       <button 
                         onClick={() => adjustRatio(1)}
-                        className="w-8 h-8 flex items-center justify-center text-poe-gold hover:bg-poe-gold/10 hover:text-white transition-colors font-bold text-lg border-l border-poe-border/30"
+                        className="w-8 h-full flex items-center justify-center text-poe-gold hover:bg-poe-gold/10 hover:text-white transition-colors font-bold text-lg border-l border-poe-border/30"
                       >
                         +
                       </button>
@@ -256,7 +243,7 @@ const App: React.FC = () => {
                     placeholder="Filter results by name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-poe-panel border border-poe-border text-gray-200 p-3 pl-10 rounded shadow-inner focus:border-poe-gold focus:outline-none transition-colors focus:bg-poe-dark"
+                    className="w-full bg-poe-panel border border-poe-border text-gray-200 p-3 pl-10 rounded shadow-inner focus:border-poe-gold focus:outline-none transition-colors focus:bg-poe-dark h-12"
                 />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-poe-goldDim">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -273,13 +260,35 @@ const App: React.FC = () => {
             />
         </div>
 
-        {/* AI Analysis Section */}
-        <AIAnalyst 
-            analysis={aiAnalysis} 
-            loading={aiLoading} 
-            onAnalyze={handleAiAnalyze}
-            hasData={items.length > 0}
-        />
+        {/* Community Project Section */}
+        <div className="mt-12 bg-poe-panel border border-poe-border p-8 rounded-lg text-center shadow-xl relative overflow-hidden group">
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-poe-goldDim to-transparent opacity-50"></div>
+           
+           <h2 className="text-poe-gold font-serif text-xl mb-4 tracking-widest flex items-center justify-center gap-3">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+               <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+             </svg>
+             COMMUNITY PROJECT
+           </h2>
+           
+           <p className="text-gray-300 text-base mb-8 max-w-3xl mx-auto leading-7">
+             This tool was created to help the Path of Exile community purely for non-profit purposes. 
+             Our goal is to help you find the best value for your dust. 
+             If you wish to propose improvements, report bugs, or contribute, please visit the repository.
+             <br/><br/>
+             <span className="text-poe-gold font-medium">Support the project by giving it a star!</span>
+           </p>
+
+           <a 
+             href="https://github.com/sebastianmontandon/dust-checker" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             className="inline-flex items-center gap-3 px-8 py-3 border border-poe-goldDim text-poe-gold hover:bg-poe-gold hover:text-black transition-all duration-300 rounded font-serif tracking-wider text-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(200,170,109,0.4)]"
+           >
+             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+             GITHUB REPOSITORY
+           </a>
+        </div>
 
         {/* Footer */}
         <footer className="mt-12 text-center text-poe-goldDim text-xs tracking-widest opacity-50 pb-8">
