@@ -50,16 +50,11 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
             </th>
 
             {/* Grupo ILVL 84 + Q20 - 2 Cols on Desktop, 1 on Mobile */}
-            <th className="py-2 px-2 text-center text-poe-gold uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30" colSpan={1}>
-              {/* Mobile: 1 col, Desktop: expands via the hidden sibling logic or we force colspan */}
-              <span className="md:hidden">Q20 Ratio</span>
-              <span className="hidden md:inline">Quality 20% (ilvl 84+)</span>
+            {/* On mobile, this header spans 1 col (the visible Ratio col). On desktop, it spans 2 (Dust + Ratio) */}
+            <th className="py-2 px-2 text-center text-poe-gold uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30 md:col-span-2" colSpan={2}>
+               <span className="md:hidden">Q20 Ratio</span>
+               <span className="hidden md:inline">Quality 20% (ilvl 84+)</span>
             </th>
-             {/* Ghost cell for desktop colspan logic visualization if needed, but usually better to control colspan dynamically. 
-                 React doesn't support media query in attributes easily. 
-                 Hack: Render two headers? No.
-                 Let's just assume the table layout handles the hidden columns below. */}
-             <th className="hidden md:table-cell py-2 px-2 border-b border-poe-border bg-poe-panel bg-opacity-30 p-0 m-0 w-0"></th> 
           </tr>
           <tr>
             {/* Subheaders vacíos para name/trade/price */}
