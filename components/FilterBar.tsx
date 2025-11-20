@@ -149,10 +149,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             ) : (
               <button
                 onClick={onSearch}
-                className={`w-full h-full font-serif tracking-widest font-bold rounded-[3px] transition-all duration-150 flex items-center justify-center gap-2 text-xs shadow-[inset_0_0_10px_rgba(0,0,0,0.2)] hover:scale-[1.01] active:scale-[0.99]
+                className={`w-full h-full font-serif tracking-wider font-bold rounded-[3px] transition-all duration-150 flex items-center justify-center gap-2 text-sm shadow-[inset_0_0_10px_rgba(0,0,0,0.2)] hover:scale-[1.01] active:scale-[0.99]
                    ${hasData 
                      ? 'bg-gradient-to-b from-[#0f1e0f] to-[#050a05] border border-[#2f452f] text-[#90c490] hover:brightness-125 hover:border-[#4a6b4a] shadow-[0_0_15px_rgba(0,0,0,0.3)]' // Update Style (Deep Green)
-                     : 'bg-gradient-to-b from-poe-gold to-poe-goldDim text-black border border-poe-gold hover:brightness-110 shadow-[0_0_15px_rgba(200,170,109,0.3)]' // Scan Style (Gold)
+                     : 'bg-gradient-to-b from-[#eecfa1] to-[#c8aa6d] text-[#1a1205] border border-[#c8aa6d] hover:brightness-110 shadow-[0_0_15px_rgba(200,170,109,0.3)]' // Scan Style (Gold)
                    }
                 `}
               >
