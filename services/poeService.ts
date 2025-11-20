@@ -32,53 +32,130 @@ const getProxiedUrl = (targetUrl: string): string => {
 };
 
 /**
- * Obtiene el ratio de conversión Divine Orb -> Chaos Orb
- * Usando el endpoint de intercambio (exchange)
+ * Obtiene el ratio Divine/Chaos realizando dos búsquedas (Bid/Ask) y promediando.
  */
 const getDivineChaosRatio = async (league: string): Promise<number> => {
   try {
-    const targetUrl = `${POE_TRADE_API}/exchange/${league}`;
-    const url = getProxiedUrl(targetUrl);
-    
-    const body = {
-      exchange: {
-        status: { option: "online" },
-        have: ["chaos"],
-        want: ["divine"]
-      }
+    const exchangeUrl = getProxiedUrl(`${POE_TRADE_API}/exchange/${league}`);
+
+    // PAYLOAD 1: HAVE DIVINES AND I WANT CHAOS (Sellers of Divine)
+    const payloadHaveDiv = {
+      query: {
+        status: { option: "securable" },
+        have: ["divine"],
+        want: ["chaos"]
+      },
+      sort: { have: "asc" }
     };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify(body)
-    });
+    // PAYLOAD 2: HAVE CHAOS AND I WANT DIVINES (Buyers of Divine)
+    const payloadHaveChaos = {
+      query: {
+        status: { option: "securable" },
+        have: ["chaos"],
+        want: ["divine"]
+      },
+      sort: { have: "asc" }
+    };
 
-    if (!response.ok) throw new Error("Failed to fetch exchange rate");
+    // Ejecutar ambas búsquedas en paralelo
+    const [resHaveDiv, resHaveChaos] = await Promise.all([
+      fetch(exchangeUrl, { method: 'POST', headers: HEADERS, body: JSON.stringify(payloadHaveDiv) }),
+      fetch(exchangeUrl, { method: 'POST', headers: HEADERS, body: JSON.stringify(payloadHaveChaos) })
+    ]);
 
-    const data = await response.json();
-    const resultIds = data.result ? Object.keys(data.result).slice(0, 5) : [];
-    
-    if (resultIds.length === 0) return 150; // Fallback
+    let ratioHaveDiv = 0;
+    let ratioHaveChaos = 0;
 
-    // Detallamos las ofertas para calcular el precio
-    // La respuesta de exchange es compleja, simplificamos usando el primer batch
-    // Nota: exchange results structure is different, simplified logic here:
-    // En realidad, exchange devuelve { "id": { listing... } }. 
-    // Por simplicidad y rate limits, asumiremos un valor estático si falla o 
-    // parseamos si es posible.
-    
-    // Para no complicar con más llamadas que pueden ser rate-limited,
-    // vamos a intentar una aproximación o usar un valor seguro si falla.
-    // Pero para hacerlo bien, deberíamos hacer un fetch a los IDs del exchange.
-    // Dejaremos el valor por defecto robusto si falla el fetch complejo.
-    return 150; 
+    // Procesar HAVE DIVINE (Venta de Divines)
+    if (resHaveDiv.ok) {
+      const data = await resHaveDiv.json();
+      const ids = Object.keys(data.result || {}).slice(0, 5);
+      if (ids.length > 0) {
+        const details = await fetchExchangeDetails(ids, data.id); // data.id is queryId
+        // Calcular cuantos Chaos dan por 1 Divine
+        // Estructura offers: item (lo que tiene el vendedor: divine), exchange (lo que quiere: chaos)
+        // Ratio = exchange amount / item amount
+        let sum = 0;
+        let count = 0;
+        details.forEach((d: any) => {
+            const offer = d.listing?.offers?.[0];
+            if (offer) {
+                const divAmount = offer.item.amount;
+                const chaosAmount = offer.exchange.amount;
+                if (divAmount > 0) {
+                    sum += (chaosAmount / divAmount);
+                    count++;
+                }
+            }
+        });
+        if (count > 0) ratioHaveDiv = sum / count;
+      }
+    }
+
+    // Procesar HAVE CHAOS (Compra de Divines con Chaos)
+    if (resHaveChaos.ok) {
+      const data = await resHaveChaos.json();
+      const ids = Object.keys(data.result || {}).slice(0, 5);
+      if (ids.length > 0) {
+        const details = await fetchExchangeDetails(ids, data.id);
+        // Calcular cuantos Chaos cuesta 1 Divine
+        // Estructura offers: item (lo que tiene el vendedor: chaos), exchange (lo que quiere: divine)
+        // Ratio = item amount / exchange amount
+        let sum = 0;
+        let count = 0;
+        details.forEach((d: any) => {
+            const offer = d.listing?.offers?.[0];
+            if (offer) {
+                const chaosAmount = offer.item.amount;
+                const divAmount = offer.exchange.amount;
+                if (divAmount > 0) {
+                    sum += (chaosAmount / divAmount);
+                    count++;
+                }
+            }
+        });
+        if (count > 0) ratioHaveChaos = sum / count;
+      }
+    }
+
+    console.log(`Ratios calculados - Venta (Div->Chaos): ${ratioHaveDiv}, Compra (Chaos->Div): ${ratioHaveChaos}`);
+
+    // Promediar los dos lados
+    if (ratioHaveDiv > 0 && ratioHaveChaos > 0) {
+        return Math.round((ratioHaveDiv + ratioHaveChaos) / 2);
+    } else if (ratioHaveDiv > 0) {
+        return Math.round(ratioHaveDiv);
+    } else if (ratioHaveChaos > 0) {
+        return Math.round(ratioHaveChaos);
+    }
+
+    return 150; // Fallback seguro
 
   } catch (e) {
-    console.warn("Error fetching divine ratio, defaulting to 150c", e);
+    console.warn("Error calculando Divine Ratio, usando fallback 150", e);
     return 150;
   }
 };
+
+/**
+ * Fetch específico para detalles de Exchange (estructura distinta a Trade Search)
+ */
+const fetchExchangeDetails = async (ids: string[], queryId: string): Promise<any[]> => {
+    // Para exchange, la URL suele requerir el parámetro exchange en el fetch o usa endpoint distinto.
+    // Sin embargo, la documentación indica usar /api/trade/fetch con ids.
+    // La diferencia clave es que los IDs de exchange son complejos.
+    const idsStr = ids.join(',');
+    const targetUrl = `${POE_TRADE_API}/fetch/${idsStr}?query=${queryId}&exchange=true`; 
+    const url = getProxiedUrl(targetUrl);
+    
+    const response = await fetch(url, { headers: HEADERS });
+    if (!response.ok) return [];
+    
+    const json = await response.json();
+    return json.result || [];
+};
+
 
 /**
  * Realiza la búsqueda de un item específico
@@ -160,16 +237,19 @@ export const fetchTradeData = async (
   signal?: AbortSignal
 ): Promise<void> => {
   
-  // Obtener el ratio al inicio (simulado o real)
-  // Nota: Implementar fetch real es riesgoso por rate limits, usaremos 170 como base Keepers aprox
-  // o intentaremos fetch si no es costoso.
-  const divineRatio = 170; // Valor fijo seguro para evitar bloqueo extra al inicio
+  // 1. Obtener el ratio real antes de empezar
+  let divineRatio = 150;
+  try {
+    divineRatio = await getDivineChaosRatio(filter.league);
+  } catch (e) {
+    console.error("Falló el cálculo inicial de ratio", e);
+  }
 
   // Escanear solo items con dust base > 100,000
   const itemsToScan = DUST_DATABASE.filter(item => item.dustValIlvl84 > 100000);
   const totalItems = itemsToScan.length;
 
-  console.log(`Iniciando escaneo. Ratio estimado: ${divineRatio}c`);
+  console.log(`Iniciando escaneo. Ratio Final: ${divineRatio}c`);
 
   for (let i = 0; i < itemsToScan.length; i++) {
     if (signal?.aborted) break;
@@ -180,14 +260,14 @@ export const fetchTradeData = async (
     try {
       // Jitter & Delay
       const randomJitter = Math.floor(Math.random() * 2000);
-      await sleep(8000 + randomJitter); 
+      await sleep(6000 + randomJitter); 
 
       if (signal?.aborted) break;
 
       // Batch Cooling
-      if (i > 0 && i % 4 === 0) {
-         onProgress(i + 1, totalItems, `${dbItem.name} (Enfriando API 30s...)`, divineRatio);
-         await sleep(30000);
+      if (i > 0 && i % 5 === 0) {
+         onProgress(i + 1, totalItems, `${dbItem.name} (Enfriando API 15s...)`, divineRatio);
+         await sleep(15000);
       }
 
       if (signal?.aborted) break;
@@ -222,7 +302,7 @@ export const fetchTradeData = async (
              if (curr === 'divine') {
                totalChaos += amount * divineRatio;
              } else {
-               // Asumimos chaos para el resto o 'chaos' explícito
+               // Asumimos chaos para el resto ('chaos')
                totalChaos += amount;
              }
           });
@@ -245,8 +325,6 @@ export const fetchTradeData = async (
         displayAmount = parseFloat(avgPriceChaos.toFixed(1));
       }
 
-      // Calcular ratios usando precio en Chaos (siempre) para consistencia
-      // Si precio es 0, ratio es 0
       const dustRatio84 = avgPriceChaos > 0 ? dbItem.dustValIlvl84 / avgPriceChaos : 0;
       const dustRatio84Q20 = avgPriceChaos > 0 ? dbItem.dustValIlvl84Q20 / avgPriceChaos : 0;
 
@@ -254,11 +332,11 @@ export const fetchTradeData = async (
         id: `real-${i}`,
         name: dbItem.name,
         priceAmount: displayAmount,
-        priceCurrency: displayCurrency, // Esto controla el icono mostrado
+        priceCurrency: displayCurrency,
         listingCount: count,
         
         dustValIlvl84: dbItem.dustValIlvl84,
-        dustRatio84: parseFloat(dustRatio84.toFixed(0)), // Enteros para ratios grandes
+        dustRatio84: parseFloat(dustRatio84.toFixed(0)),
         
         dustValIlvl84Q20: dbItem.dustValIlvl84Q20,
         dustRatio84Q20: parseFloat(dustRatio84Q20.toFixed(0)),
