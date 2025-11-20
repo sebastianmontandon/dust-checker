@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Exile Dust Calculator</title>
     
-    <!-- Favicon Configuration: Embedded SVG Data URI (Guaranteed Load) -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgcng9IjE1IiBmaWxsPSIjMGEwYjEwIiBzdHJva2U9IiM4YTc1NGMiIHN0cm9rZS13aWR0aD0iNSIvPjxwYXRoIGQ9Ik0yNSA3MCBRIDUwIDIwIDc1IDcwIEwgNzUgODAgUSA1MCA5MCAyNSA4MCBaIiBmaWxsPSIjM2I4MmY2Ii8+PGNpcmNsZSBjeD0iNTAiIGN5PSI2MCIgcj0iMTUiIGZpbGw9IiM2MGE1ZmEiIGZpbHRlcj0iYmx1cig1cHgpIiBvcGFjaXR5PSIwLjYiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSIyIiBmaWxsPSJ3aGl0ZSIvPjxjaXJjbGUgY3g9IjYwIiBjeT0iNTUiIHI9IjIiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSI0NSIgcj0iMyIgZmlsbD0id2hpdGUiLz48L3N2Zz4=" />
+    <!-- Favicon: Green Recycle/Efficiency Cycle Icon (SVG Data URI) -->
+    <!-- Matches the attached image: 3 arrows in a circle with green gradients -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJhIiB4MT0iMyIgeTE9IjIxIiB4Mj0iMjEiIHkyPSIyMSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzU1OGI0NyIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzhkYzM1MSIvPjwvbGluZWFyR3JhZGllbnQ+PGxpbmVhckdyYWRpZW50IGlkPSJiIiB4MT0iMyIgeTE9IjMiIHgyPSIyMSIgeTI9IjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNjZGRjMzkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM4YmMzNGEiLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0iYyIgeDE9IjIxIiB5MT0iMjEiIHgyPSIyMSIgeTI9IjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM0Y2FmNTAiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM2NjY2NjYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cGF0aCBmaWxsPSIjY2RkYzM5IiBkPSJNMTIsNi42TDkuMiw5LjRoNS42QzE0LjgsOS40LDE1LDkuNSwxNSw5LjVjMCwwLTAuMSwwLTAuMSwwYzAsMCwwLDAuMSwwLDAuMWMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGw1LjYsMy42bDIuOC00LjhIMjMuMmMtMC4yLTMuNS0zLjEtNi4yLTYuNi02LjJjLTIuNiwwLTUuMSwxLjUtNi40LDMuOEwxMiw2LjZ6Ii8+PHBhdGggZmlsbD0iIzU1OGI0NyIgZD0iTTYsMTIuM2wtMi44LDQuOGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMGMwLDAsMCwwLDAsMC4xbDUuNi0zLjZsLTIuOC00LjhIOC44QzksNS4zLDExLjksMi42LDE1LjQsMi42YzIuNiwwLDUuMSwxLjUsNi40LDMuOEwyMCw5LjRjLTEuMy0xLjUtMy4yLTIuNC01LjMtMi40Yy0yLjksMC01LjQsMS44LTYuNCw0LjRMNiwxMi4zeiIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDEyIDEyKSIvPjxwYXRoIGZpbGw9IiM4YmMzNGEiIGQ9Ik02LDEyLjNsLTIuOCw0LjhjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDBjMCwwLDAsMCwwLDAuMWw1LjYtMy42bC0yLjgtNC44SDguOEM5LDUuMywxMS45LDIuNiwxNS40LDIuNmMyLjYsMCw1LjEsMS41LDYuNCwzLjhMMjAsOS40Yy0xLjMtMS41LTMuMi0yLjQtNS4zLTIuNGMtMi45LDAtNS40LDEuOC02LjQsNC40TDYsMTIuM3oiIHRyYW5zZm9ybT0icm90YXRlKDI0MCAxMiAxMikiLz48L3N2Zz4=" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -29,6 +30,9 @@
                 red: '#d13a3a',
                 text: '#a38d6d'
               }
+            },
+            animation: {
+              'spin-slow': 'spin 3s linear infinite',
             }
           }
         }
@@ -55,7 +59,7 @@
         background: #8a754c; 
       }
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
