@@ -7,23 +7,23 @@ export const analyzeMarket = async (items: TradeItem[]): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   // Prepare a summarized context for the AI
-  // We only send the top 5 and bottom 5 to save tokens and context
-  const sortedByEfficiency = [...items].sort((a, b) => b.dustRatio - a.dustRatio);
+  // We use Q20 ratio as the benchmark for efficiency
+  const sortedByEfficiency = [...items].sort((a, b) => b.dustRatio84Q20 - a.dustRatio84Q20);
   const top5 = sortedByEfficiency.slice(0, 5);
   
   const promptContext = JSON.stringify(top5.map(i => ({
     item: i.name,
     cost: `${i.priceAmount} ${i.priceCurrency}`,
-    dust: i.dustValue,
-    ratio: i.dustRatio
+    dustQ20: i.dustValIlvl84Q20,
+    ratio: i.dustRatio84Q20
   })));
 
   const prompt = `
     Actúa como un experto jugador de Path of Exile enfocado en la mecánica de "Keepers".
-    Analiza la siguiente lista de objetos (Mejores candidatos por Dust/Costo):
+    Analiza la siguiente lista de objetos (Mejores candidatos por Dust/Costo considerando 20% Quality):
     ${promptContext}
 
-    Proporciona un consejo breve y estratégico (máximo 3 oraciones) en Español sobre cuál objeto compraría para maximizar la obtención de Thaumaturgic Dust y por qué. Menciona si el precio parece sospechosamente barato o si es una oportunidad de arbitraje.
+    Proporciona un consejo breve y estratégico (máximo 3 oraciones) en Español sobre cuál objeto compraría para maximizar la obtención de Thaumaturgic Dust. Menciona si vale la pena usar Whetstones/Scraps para el 20% de calidad.
   `;
 
   try {

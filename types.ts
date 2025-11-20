@@ -14,7 +14,8 @@ export enum Currency {
 export interface DustItemData {
   name: string;
   baseType: string;
-  dustValue: number; // Base dust value from the "drive file"
+  dustValIlvl84: number;     // Valor para Item Level 84+
+  dustValIlvl84Q20: number;  // Valor para Item Level 84+ con 20% Calidad
 }
 
 export interface TradeItem {
@@ -23,8 +24,14 @@ export interface TradeItem {
   priceAmount: number;
   priceCurrency: Currency;
   listingCount: number;
-  dustValue: number;
-  dustRatio: number; // Dust per 1 unit of currency
+  
+  // Nuevos campos de datos
+  dustValIlvl84: number;
+  dustRatio84: number;
+  
+  dustValIlvl84Q20: number;
+  dustRatio84Q20: number;
+
   icon?: string;
 }
 
