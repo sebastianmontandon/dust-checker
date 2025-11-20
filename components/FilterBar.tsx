@@ -7,10 +7,12 @@ interface FilterBarProps {
   onChange: (newFilters: FilterState) => void;
   onSearch: () => void;
   onStop: () => void;
+  onPause: () => void;
+  isPaused: boolean;
   loading: boolean;
 }
 
-export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearch, onStop, loading }) => {
+export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearch, onStop, onPause, isPaused, loading }) => {
   
   const handleChange = (key: keyof FilterState, value: any) => {
     onChange({ ...filters, [key]: value });
@@ -22,7 +24,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
         
         {/* League Selector */}
         <div className="space-y-2">
-          <label className="text-poe-gold text-sm font-serif tracking-wider">Liga</label>
+          <label className="text-poe-gold text-sm font-serif tracking-wider">League</label>
           <select 
             className="w-full bg-poe-dark border border-poe-border text-gray-200 p-2 rounded focus:border-poe-gold focus:outline-none"
             value={filters.league}
@@ -37,7 +39,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
 
         {/* Currency Selector */}
         <div className="space-y-2">
-          <label className="text-poe-gold text-sm font-serif tracking-wider">Moneda de Pago</label>
+          <label className="text-poe-gold text-sm font-serif tracking-wider">Payment Currency</label>
           <div className="relative">
             <select 
               className="w-full bg-poe-dark border border-poe-border text-gray-200 p-2 pl-10 rounded focus:border-poe-gold focus:outline-none appearance-none"
@@ -61,7 +63,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
 
         {/* Sale Type Selector */}
         <div className="space-y-2">
-          <label className="text-poe-gold text-sm font-serif tracking-wider">Tipo de Venta</label>
+          <label className="text-poe-gold text-sm font-serif tracking-wider">Sale Type</label>
           <select 
             className="w-full bg-poe-dark border border-poe-border text-gray-200 p-2 rounded focus:border-poe-gold focus:outline-none"
             value={filters.saleType}
@@ -74,22 +76,35 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
           </select>
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-end">
+        {/* Action Buttons */}
+        <div className="flex items-end gap-2">
           {loading ? (
-            <button
-              onClick={onStop}
-              className="w-full font-serif tracking-widest font-bold py-2 px-4 rounded transition-all duration-300 bg-red-900/80 text-red-200 hover:bg-red-800 border border-poe-red shadow-[0_0_10px_rgba(209,58,58,0.3)] hover:shadow-[0_0_20px_rgba(209,58,58,0.5)] flex items-center justify-center gap-2"
-            >
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              DETENER
-            </button>
+            <>
+              <button
+                onClick={onStop}
+                className="flex-1 font-serif tracking-widest font-bold py-2 px-2 rounded transition-all duration-300 bg-red-900/80 text-red-200 hover:bg-red-800 border border-poe-red shadow-[0_0_10px_rgba(209,58,58,0.3)] hover:shadow-[0_0_20px_rgba(209,58,58,0.5)] flex items-center justify-center gap-1 text-sm"
+              >
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                STOP
+              </button>
+              
+              <button
+                onClick={onPause}
+                className={`flex-1 font-serif tracking-widest font-bold py-2 px-2 rounded transition-all duration-300 border flex items-center justify-center gap-1 text-sm
+                  ${isPaused 
+                    ? 'bg-green-900/80 text-green-200 hover:bg-green-800 border-green-600 shadow-[0_0_10px_rgba(72,187,120,0.3)]' 
+                    : 'bg-yellow-900/80 text-yellow-200 hover:bg-yellow-800 border-yellow-600 shadow-[0_0_10px_rgba(236,201,75,0.3)]'
+                  }`}
+              >
+                 {isPaused ? '▶ RESUME' : '⏸ PAUSE'}
+              </button>
+            </>
           ) : (
             <button
               onClick={onSearch}
               className="w-full font-serif tracking-widest font-bold py-2 px-4 rounded transition-all duration-300 bg-gradient-to-b from-poe-gold to-poe-goldDim text-black hover:scale-[1.02] hover:brightness-110 shadow-[0_0_15px_rgba(200,170,109,0.3)]"
             >
-              BUSCAR OPORTUNIDADES
+              SCAN MARKET
             </button>
           )}
         </div>

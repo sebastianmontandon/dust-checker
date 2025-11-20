@@ -9,7 +9,7 @@ interface ItemTableProps {
 }
 
 export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => {
-  
+
   const getSortIcon = (field: keyof TradeItem) => {
     if (sort.field !== field) return <span className="opacity-20 ml-1">↕</span>;
     return sort.direction === 'asc' ? <span className="text-poe-gold ml-1">↑</span> : <span className="text-poe-gold ml-1">↓</span>;
@@ -30,7 +30,7 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
   if (items.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 italic border border-poe-border rounded-lg bg-poe-panel">
-        No se encontraron datos. Inicia una búsqueda.
+        No data found. Start a scan.
       </div>
     );
   }
@@ -40,8 +40,8 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
       <table className="min-w-full bg-poe-dark">
         <thead>
           <tr>
-            <HeaderCell field="name" label="Objeto" className="border-r border-poe-border" />
-            <HeaderCell field="priceAmount" label="Precio (Top 10)" align="right" className="border-r border-poe-border" />
+            <HeaderCell field="name" label="Item" className="border-r border-poe-border" />
+            <HeaderCell field="priceAmount" label="Price (Top 10)" align="right" className="border-r border-poe-border" />
             
             {/* Grupo ILVL 84 */}
             <th className="py-2 px-2 text-center text-poe-goldDim uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30" colSpan={2}>

@@ -14,9 +14,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ current, total, curren
       {/* Header Info */}
       <div className="flex justify-between items-end mb-2 relative z-10">
         <div className="flex flex-col">
-          <span className="text-xs text-poe-goldDim uppercase tracking-widest font-bold">Estado del Escaneo</span>
+          <span className="text-xs text-poe-goldDim uppercase tracking-widest font-bold">Scan Status</span>
           <span className="text-poe-text font-serif text-sm">
-            Procesando: <span className="text-white font-bold">{currentItemName}</span>
+            Processing: <span className="text-white font-bold">{currentItemName}</span>
           </span>
         </div>
         <div className="text-right">

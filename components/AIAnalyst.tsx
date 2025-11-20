@@ -8,6 +8,7 @@ interface AIAnalystProps {
 }
 
 export const AIAnalyst: React.FC<AIAnalystProps> = ({ analysis, loading, onAnalyze, hasData }) => {
+  
   if (!hasData) return null;
 
   return (
@@ -17,14 +18,14 @@ export const AIAnalyst: React.FC<AIAnalystProps> = ({ analysis, loading, onAnaly
 
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-serif text-poe-gold flex items-center gap-2">
-          <span className="text-2xl">🔮</span> Oráculo de Kalguur (AI)
+          <span className="text-2xl">🔮</span> Oracle of Kalguur (AI)
         </h2>
         <button 
           onClick={onAnalyze}
           disabled={loading}
           className="text-xs uppercase tracking-widest border border-poe-gold text-poe-gold hover:bg-poe-gold hover:text-black px-4 py-2 rounded transition-all"
         >
-          {loading ? 'Consultando...' : 'Analizar Mercado'}
+          {loading ? "Consulting..." : "Analyze Market"}
         </button>
       </div>
 
@@ -34,14 +35,14 @@ export const AIAnalyst: React.FC<AIAnalystProps> = ({ analysis, loading, onAnaly
             <div className="w-2 h-2 bg-poe-gold rounded-full animate-bounce"></div>
             <div className="w-2 h-2 bg-poe-gold rounded-full animate-bounce delay-75"></div>
             <div className="w-2 h-2 bg-poe-gold rounded-full animate-bounce delay-150"></div>
-            <span className="text-sm text-poe-goldDim">Interpretando las estrellas...</span>
+            <span className="text-sm text-poe-goldDim">Interpreting the stars...</span>
           </div>
         ) : analysis ? (
           <div className="prose prose-invert max-w-none">
             <p className="italic border-l-2 border-poe-red pl-4">{analysis}</p>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">Haz clic en "Analizar Mercado" para obtener una recomendación basada en inteligencia artificial sobre qué objetos desencantar.</p>
+          <p className="text-sm text-gray-500">Click 'Analyze Market' to get an AI recommendation on what to disenchant.</p>
         )}
       </div>
     </div>

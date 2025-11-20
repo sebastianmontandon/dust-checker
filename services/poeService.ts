@@ -234,15 +234,23 @@ export const fetchTradeData = async (
   filter: FilterState, 
   onItemLoaded: (item: TradeItem) => void,
   onProgress: (current: number, total: number, itemName: string, ratio?: number) => void,
-  signal?: AbortSignal
+  checkPaused: () => Promise<void>,
+  signal?: AbortSignal,
+  manualRatioOverride?: number
 ): Promise<void> => {
   
-  // 1. Obtener el ratio real antes de empezar
+  // 1. Obtener el ratio real antes de empezar, o usar el manual si existe
   let divineRatio = 150;
-  try {
-    divineRatio = await getDivineChaosRatio(filter.league);
-  } catch (e) {
-    console.error("Falló el cálculo inicial de ratio", e);
+  
+  if (manualRatioOverride && manualRatioOverride > 0) {
+    divineRatio = manualRatioOverride;
+    console.log(`Usando Ratio Manual: ${divineRatio}`);
+  } else {
+    try {
+      divineRatio = await getDivineChaosRatio(filter.league);
+    } catch (e) {
+      console.error("Falló el cálculo inicial de ratio", e);
+    }
   }
 
   // Escanear solo items con dust base > 100,000
@@ -253,6 +261,7 @@ export const fetchTradeData = async (
 
   for (let i = 0; i < itemsToScan.length; i++) {
     if (signal?.aborted) break;
+    await checkPaused();
 
     const dbItem = itemsToScan[i];
     onProgress(i + 1, totalItems, dbItem.name, divineRatio);
@@ -263,14 +272,16 @@ export const fetchTradeData = async (
       await sleep(6000 + randomJitter); 
 
       if (signal?.aborted) break;
+      await checkPaused();
 
       // Batch Cooling
       if (i > 0 && i % 5 === 0) {
-         onProgress(i + 1, totalItems, `${dbItem.name} (Enfriando API 15s...)`, divineRatio);
+         onProgress(i + 1, totalItems, `${dbItem.name} (Cooling API 15s...)`, divineRatio);
          await sleep(15000);
       }
 
       if (signal?.aborted) break;
+      await checkPaused();
 
       const searchResult = await searchItem(
         filter.league, 
@@ -283,10 +294,12 @@ export const fetchTradeData = async (
       let avgPriceChaos = 0;
       let count = 0;
       let icon = undefined;
+      let validListingsCount = 0;
 
       if (searchResult.result && searchResult.result.length > 0) {
         await sleep(2000);
-        if (signal?.aborted) break; 
+        if (signal?.aborted) break;
+        await checkPaused();
         
         const detailsData = await fetchItemDetails(searchResult.result, searchResult.id);
         const listings = detailsData.result;
@@ -301,13 +314,19 @@ export const fetchTradeData = async (
              
              if (curr === 'divine') {
                totalChaos += amount * divineRatio;
-             } else {
-               // Asumimos chaos para el resto ('chaos')
+               validListingsCount++;
+             } else if (curr === 'chaos') {
                totalChaos += amount;
+               validListingsCount++;
+             } else {
+               // Ignorar otras monedas (Mirrors, Alchs, Exalts) para no romper el promedio
+               console.warn(`Ignorando moneda no estándar para ${dbItem.name}: ${amount} ${curr}`);
              }
           });
           
-          avgPriceChaos = totalChaos / listings.length;
+          if (validListingsCount > 0) {
+            avgPriceChaos = totalChaos / validListingsCount;
+          }
           count = searchResult.total;
           icon = listings[0].item.icon;
         }
@@ -354,7 +373,7 @@ export const fetchTradeData = async (
         if (match && match[1]) waitTime = (parseInt(match[1], 10) + 5) * 1000;
         const waitSeconds = Math.ceil(waitTime / 1000);
         
-        onProgress(i + 1, totalItems, `${dbItem.name} (⛔ Rate Limit: Esperando ${waitSeconds}s...)`, divineRatio);
+        onProgress(i + 1, totalItems, `${dbItem.name} (⛔ Rate Limit: Waiting ${waitSeconds}s...)`, divineRatio);
         await sleep(waitTime);
         if (!signal?.aborted) { i--; continue; }
       }

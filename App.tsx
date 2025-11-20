@@ -6,16 +6,23 @@ import { ProgressBar } from './components/ProgressBar';
 import { Currency, FilterState, SaleType, SortState, TradeItem } from './types';
 import { fetchTradeData } from './services/poeService';
 import { analyzeMarket } from './services/geminiService';
+import { CURRENCIES } from './constants';
 
 const App: React.FC = () => {
   const [items, setItems] = useState<TradeItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentRatio, setCurrentRatio] = useState<number | null>(null);
+  
+  // Ratio puede ser editado manualmente. Si es '' es automático.
+  const [currentRatio, setCurrentRatio] = useState<number | string>(150);
   
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Use a Ref to track paused state inside the async loop, but useState for UI reactivity
+  const isPausedRef = useRef(false);
   
   const [progress, setProgress] = useState({
     current: 0,
@@ -35,6 +42,25 @@ const App: React.FC = () => {
     direction: 'desc'
   });
 
+  const togglePause = () => {
+    const nextState = !isPaused;
+    setIsPaused(nextState);
+    isPausedRef.current = nextState;
+    
+    if (nextState) {
+        setProgress(prev => ({ ...prev, currentItemName: "Scan paused" }));
+    } else {
+        setProgress(prev => ({ ...prev, currentItemName: "Processing..." }));
+    }
+  };
+
+  // Check paused callback for the service
+  const checkPausedCallback = async () => {
+    while (isPausedRef.current) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  };
+
   const handleSearch = async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -42,14 +68,20 @@ const App: React.FC = () => {
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    
+    // Reset pause state on new search
+    setIsPaused(false);
+    isPausedRef.current = false;
 
     setLoading(true);
     setItems([]); 
     setAiAnalysis(null);
-    setCurrentRatio(null); // Reset ratio display
-    setProgress({ current: 0, total: 0, currentItemName: 'Iniciando...' });
+    setProgress({ current: 0, total: 0, currentItemName: '...' });
     
     try {
+      // Pasamos el ratio actual si es un número válido, sino undefined (para que lo busque)
+      const manualRatio = typeof currentRatio === 'number' ? currentRatio : Number(currentRatio);
+      
       await fetchTradeData(
         filters, 
         (newItem) => {
@@ -57,101 +89,142 @@ const App: React.FC = () => {
         },
         (current, total, itemName, ratio) => {
           setProgress({ current, total, currentItemName: itemName });
-          if (ratio && !currentRatio) setCurrentRatio(ratio);
+          if (ratio && ratio !== manualRatio) {
+              setCurrentRatio(ratio);
+          }
         },
-        controller.signal
+        checkPausedCallback,
+        controller.signal,
+        manualRatio
       );
-    } catch (error) {
-      console.error("Search failed or aborted", error);
+    } catch (error: any) {
+        if (error.name !== 'AbortError') {
+            console.error(error);
+        }
     } finally {
-      if (abortControllerRef.current === controller) {
-        setLoading(false);
-        abortControllerRef.current = null;
-      }
+        if (!controller.signal.aborted) {
+            setLoading(false);
+            setProgress(p => ({ ...p, currentItemName: 'Complete' }));
+        }
     }
   };
 
-  const handleStopSearch = () => {
+  const handleStop = () => {
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setLoading(false);
-      setProgress(prev => ({ ...prev, currentItemName: 'Búsqueda detenida por el usuario' }));
+        abortControllerRef.current.abort();
     }
-  };
-
-  const handleAnalyze = async () => {
-    if (items.length === 0) return;
-    setAiLoading(true);
-    try {
-      const result = await analyzeMarket(items);
-      setAiAnalysis(result);
-    } catch (error) {
-      console.error("AI Analysis failed", error);
-    } finally {
-      setAiLoading(false);
-    }
+    setLoading(false);
+    setIsPaused(false);
+    isPausedRef.current = false;
+    setProgress({ current: 0, total: 0, currentItemName: "Scan stopped by user" });
   };
 
   const handleSort = (field: keyof TradeItem) => {
     setSort(prev => ({
-      field,
-      direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
+        field,
+        direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
     }));
   };
 
-  const sortedAndFilteredItems = useMemo(() => {
-    let result = items;
-    
-    if (searchTerm) {
-      const lowerTerm = searchTerm.toLowerCase();
-      result = result.filter(item => 
-        item.name.toLowerCase().includes(lowerTerm)
-      );
-    }
+  const handleAiAnalyze = async () => {
+      if (items.length === 0) return;
+      setAiLoading(true);
+      const analysis = await analyzeMarket(items);
+      setAiAnalysis(analysis);
+      setAiLoading(false);
+  };
 
-    return result.sort((a, b) => {
-      const aValue = a[sort.field];
-      const bValue = b[sort.field];
-      
-      if (aValue === undefined || bValue === undefined) return 0;
-      
-      if (sort.direction === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
+  const adjustRatio = (amount: number) => {
+    setCurrentRatio(prev => {
+      const val = typeof prev === 'string' ? parseFloat(prev) || 0 : prev;
+      return Math.max(1, val + amount);
     });
-  }, [items, sort, searchTerm]);
+  };
+
+  const filteredItems = useMemo(() => {
+    let result = [...items];
+    if (searchTerm) {
+        const lowerTerm = searchTerm.toLowerCase();
+        result = result.filter(i => i.name.toLowerCase().includes(lowerTerm));
+    }
+    
+    result.sort((a, b) => {
+        const valA = a[sort.field];
+        const valB = b[sort.field];
+        
+        // Handle potentially undefined values
+        if (valA === undefined && valB === undefined) return 0;
+        if (valA === undefined) return 1;
+        if (valB === undefined) return -1;
+
+        if (valA < valB) return sort.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sort.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+    
+    return result;
+  }, [items, searchTerm, sort]);
+
+  // Icons for header
+  const divineIcon = CURRENCIES.find(c => c.id === Currency.DIVINE)?.icon;
+  const chaosIcon = CURRENCIES.find(c => c.id === Currency.CHAOS)?.icon;
 
   return (
-    <div className="min-h-screen bg-poe-dark text-poe-text p-4 md:p-8 font-sans selection:bg-poe-red selection:text-white">
+    <div className="min-h-screen bg-poe-dark text-poe-text font-sans p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Header with Ratio Display */}
-        <header className="mb-10 relative">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-b from-poe-gold to-poe-goldDim mb-2">
+        {/* Header */}
+        <header className="mb-8 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-poe-border pb-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-serif text-poe-gold tracking-widest drop-shadow-md text-center md:text-left">
               EXILE DUST CALCULATOR
             </h1>
-            <p className="text-poe-goldDim text-sm uppercase tracking-[0.2em]">
-              Keepers League Efficiency Tool
+            <p className="text-poe-goldDim text-sm uppercase tracking-widest text-center md:text-left mt-1">
+              Efficiency Tool for <span className="text-white font-bold">{filters.league}</span>
             </p>
           </div>
-          
-          {/* Divine Ratio Indicator */}
-          {currentRatio && (
-            <div className="absolute top-0 right-0 hidden md:flex flex-col items-end bg-poe-panel border border-poe-border px-3 py-2 rounded shadow-lg animate-fade-in">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Ratio Actual</span>
-              <div className="flex items-center gap-2 font-mono text-poe-gold font-bold">
-                <span>1</span>
-                <img src="https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyModValues.png" className="w-4 h-4" alt="div" />
-                <span>=</span>
-                <span>{currentRatio}</span>
-                <img src="https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png" className="w-4 h-4" alt="chaos" />
-              </div>
+
+          <div className="flex items-end gap-6">
+            {/* Ratio Input */}
+            <div className="flex flex-col items-center">
+                <label className="text-[10px] uppercase text-poe-goldDim tracking-wider mb-1">Divine Ratio (Editable)</label>
+                <div className="flex items-center bg-black/40 rounded-md px-3 py-1.5 border border-poe-border shadow-inner">
+                    
+                    {/* Divine Icon */}
+                    <div className="flex items-center mr-3">
+                      <span className="text-white font-bold mr-1">1</span>
+                      <img src={divineIcon} alt="Divine" className="w-8 h-8 object-contain drop-shadow-lg" />
+                      <span className="text-poe-gold mx-2 text-lg font-bold">=</span>
+                    </div>
+
+                    {/* Input Control */}
+                    <div className="flex items-center bg-poe-dark rounded border border-poe-border/50">
+                      <button 
+                        onClick={() => adjustRatio(-1)}
+                        className="w-8 h-8 flex items-center justify-center text-poe-gold hover:bg-poe-gold/10 hover:text-white transition-colors font-bold text-lg border-r border-poe-border/30"
+                      >
+                        -
+                      </button>
+                      <input 
+                          type="number" 
+                          value={currentRatio}
+                          onChange={(e) => setCurrentRatio(e.target.value ? parseFloat(e.target.value) : '')}
+                          className="w-16 bg-transparent text-center text-white font-mono font-bold focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button 
+                        onClick={() => adjustRatio(1)}
+                        className="w-8 h-8 flex items-center justify-center text-poe-gold hover:bg-poe-gold/10 hover:text-white transition-colors font-bold text-lg border-l border-poe-border/30"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Chaos Icon */}
+                    <div className="ml-3">
+                      <img src={chaosIcon} alt="Chaos" className="w-8 h-8 object-contain drop-shadow-lg" />
+                    </div>
+                </div>
             </div>
-          )}
+          </div>
         </header>
 
         {/* Main Controls */}
@@ -159,56 +232,59 @@ const App: React.FC = () => {
           filters={filters} 
           onChange={setFilters} 
           onSearch={handleSearch}
-          onStop={handleStopSearch}
-          loading={loading} 
+          onStop={handleStop}
+          onPause={togglePause}
+          isPaused={isPaused}
+          loading={loading}
         />
 
-        {/* Progress Bar */}
-        {(loading || items.length > 0) && progress.total > 0 && (
-          <ProgressBar 
-            current={progress.current} 
-            total={progress.total} 
-            currentItemName={progress.currentItemName} 
-          />
+        {/* Progress */}
+        {loading && (
+            <ProgressBar 
+                current={progress.current} 
+                total={progress.total} 
+                currentItemName={progress.currentItemName}
+            />
         )}
 
-        {/* Search Input */}
-        <div className="mb-4 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-poe-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="Filtrar resultados por nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-poe-panel border border-poe-border text-gray-200 p-3 pl-10 rounded focus:border-poe-gold focus:outline-none shadow-inner transition-colors"
-          />
+        {/* Content Area */}
+        <div className="grid grid-cols-1 gap-6">
+            {/* Search Filter */}
+            <div className="relative">
+                <input 
+                    type="text" 
+                    placeholder="Filter results by name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-poe-panel border border-poe-border text-gray-200 p-3 pl-10 rounded shadow-inner focus:border-poe-gold focus:outline-none transition-colors focus:bg-poe-dark"
+                />
+                <div className="absolute left-3 top-3.5 pointer-events-none text-poe-goldDim">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                  </svg>
+                </div>
+            </div>
+
+            {/* Results Table */}
+            <ItemTable 
+                items={filteredItems} 
+                sort={sort} 
+                onSort={handleSort}
+            />
         </div>
 
-        {/* Results */}
-        <div className="mb-6">
-          <ItemTable 
-            items={sortedAndFilteredItems} 
-            sort={sort} 
-            onSort={handleSort} 
-          />
-        </div>
-
-        {/* AI Section */}
+        {/* AI Analysis Section */}
         <AIAnalyst 
-          analysis={aiAnalysis} 
-          loading={aiLoading} 
-          onAnalyze={handleAnalyze}
-          hasData={items.length > 0}
+            analysis={aiAnalysis} 
+            loading={aiLoading} 
+            onAnalyze={handleAiAnalyze}
+            hasData={items.length > 0}
         />
-        
+
         {/* Footer */}
-        <footer className="mt-16 text-center text-gray-600 text-xs">
-          <p>Nota: El escaneo es intencionalmente lento para cumplir con las normas de la API de Grinding Gear Games.</p>
-          <p className="mt-1">Not affiliated with Grinding Gear Games.</p>
+        <footer className="mt-12 text-center text-poe-goldDim text-xs tracking-widest opacity-50 pb-8">
+          <p>Path of Exile is a registered trademark of Grinding Gear Games.</p>
+          <p>This tool is not affiliated with GGG.</p>
         </footer>
       </div>
     </div>

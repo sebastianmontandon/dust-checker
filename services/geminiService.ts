@@ -19,11 +19,11 @@ export const analyzeMarket = async (items: TradeItem[]): Promise<string> => {
   })));
 
   const prompt = `
-    Actúa como un experto jugador de Path of Exile enfocado en la mecánica de "Keepers".
-    Analiza la siguiente lista de objetos (Mejores candidatos por Dust/Costo considerando 20% Quality):
+    Act as an expert Path of Exile player focused on the current league mechanics.
+    Analyze the following list of items (Best candidates for Dust/Cost considering 20% Quality):
     ${promptContext}
 
-    Proporciona un consejo breve y estratégico (máximo 3 oraciones) en Español sobre cuál objeto compraría para maximizar la obtención de Thaumaturgic Dust. Menciona si vale la pena usar Whetstones/Scraps para el 20% de calidad.
+    Provide brief strategic advice (max 3 sentences) in English on which item to buy to maximize Thaumaturgic Dust gain. Mention if it's worth using Whetstones/Scraps for 20% quality.
   `;
 
   try {
@@ -31,9 +31,9 @@ export const analyzeMarket = async (items: TradeItem[]): Promise<string> => {
         model: 'gemini-2.5-flash',
         contents: prompt,
     });
-    return response.text || "No se pudo generar el análisis.";
+    return response.text || "Could not generate analysis.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Hubo un error consultando al oráculo de Kalguur (Gemini API).";
+    return "There was an error consulting the Oracle of Kalguur (Gemini API).";
   }
 };
