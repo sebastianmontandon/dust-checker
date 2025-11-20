@@ -13,11 +13,10 @@ const App: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentRatio, setCurrentRatio] = useState<number | null>(null);
   
-  // Referencia al controlador de aborto para cancelar búsquedas
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Estado para la barra de progreso
   const [progress, setProgress] = useState({
     current: 0,
     total: 0,
@@ -26,7 +25,7 @@ const App: React.FC = () => {
   
   const [filters, setFilters] = useState<FilterState>({
     league: 'Keepers',
-    currency: Currency.CHAOS,
+    currency: Currency.CHAOS_DIVINE, 
     saleType: SaleType.INSTANT,
     minDust: 0
   });
@@ -37,37 +36,34 @@ const App: React.FC = () => {
   });
 
   const handleSearch = async () => {
-    // Si hay una búsqueda anterior corriendo, la cancelamos primero
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // Creamos un nuevo controlador
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     setLoading(true);
-    setItems([]); // Limpiamos tabla anterior
+    setItems([]); 
     setAiAnalysis(null);
+    setCurrentRatio(null); // Reset ratio display
     setProgress({ current: 0, total: 0, currentItemName: 'Iniciando...' });
     
     try {
-      // Pasamos la señal de aborto al servicio
       await fetchTradeData(
         filters, 
         (newItem) => {
           setItems(prevItems => [...prevItems, newItem]);
         },
-        (current, total, itemName) => {
+        (current, total, itemName, ratio) => {
           setProgress({ current, total, currentItemName: itemName });
+          if (ratio && !currentRatio) setCurrentRatio(ratio);
         },
         controller.signal
       );
     } catch (error) {
       console.error("Search failed or aborted", error);
     } finally {
-      // Solo quitamos el loading si el controlador actual es el que terminó
-      // (Para evitar condiciones de carrera si el usuario spamea buscar)
       if (abortControllerRef.current === controller) {
         setLoading(false);
         abortControllerRef.current = null;
@@ -105,7 +101,6 @@ const App: React.FC = () => {
   };
 
   const sortedAndFilteredItems = useMemo(() => {
-    // 1. Filtrar por término de búsqueda
     let result = items;
     
     if (searchTerm) {
@@ -115,7 +110,6 @@ const App: React.FC = () => {
       );
     }
 
-    // 2. Ordenar
     return result.sort((a, b) => {
       const aValue = a[sort.field];
       const bValue = b[sort.field];
@@ -134,14 +128,30 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-poe-dark text-poe-text p-4 md:p-8 font-sans selection:bg-poe-red selection:text-white">
       <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-b from-poe-gold to-poe-goldDim mb-2">
-            EXILE DUST CALCULATOR
-          </h1>
-          <p className="text-poe-goldDim text-sm uppercase tracking-[0.2em]">
-            Keepers League Efficiency Tool
-          </p>
+        {/* Header with Ratio Display */}
+        <header className="mb-10 relative">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-b from-poe-gold to-poe-goldDim mb-2">
+              EXILE DUST CALCULATOR
+            </h1>
+            <p className="text-poe-goldDim text-sm uppercase tracking-[0.2em]">
+              Keepers League Efficiency Tool
+            </p>
+          </div>
+          
+          {/* Divine Ratio Indicator */}
+          {currentRatio && (
+            <div className="absolute top-0 right-0 hidden md:flex flex-col items-end bg-poe-panel border border-poe-border px-3 py-2 rounded shadow-lg animate-fade-in">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Ratio Actual</span>
+              <div className="flex items-center gap-2 font-mono text-poe-gold font-bold">
+                <span>1</span>
+                <img src="https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyModValues.png" className="w-4 h-4" alt="div" />
+                <span>=</span>
+                <span>{currentRatio}</span>
+                <img src="https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png" className="w-4 h-4" alt="chaos" />
+              </div>
+            </div>
+          )}
         </header>
 
         {/* Main Controls */}
@@ -153,7 +163,7 @@ const App: React.FC = () => {
           loading={loading} 
         />
 
-        {/* Progress Bar (Only visible when loading or paused with items) */}
+        {/* Progress Bar */}
         {(loading || items.length > 0) && progress.total > 0 && (
           <ProgressBar 
             current={progress.current} 

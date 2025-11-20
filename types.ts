@@ -6,9 +6,10 @@ export enum SaleType {
 }
 
 export enum Currency {
-  CHAOS = 'chaos',
-  DIVINE = 'divine',
-  ALCH = 'alch'
+  CHAOS_EQUIVALENT = 'chaos_equivalent', // Equivalentes a Chaos (No price filter)
+  CHAOS_DIVINE = 'chaos_divine',         // Chaos y Divines combinados
+  CHAOS = 'chaos',                       // Solo Chaos Orbs
+  DIVINE = 'divine'                      // Solo Divine Orbs
 }
 
 export interface DustItemData {
