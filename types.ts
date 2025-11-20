@@ -34,6 +34,7 @@ export interface TradeItem {
   dustRatio84Q20: number;
 
   icon?: string;
+  tradeUrl?: string; // URL directa a la búsqueda en poe.trade
 }
 
 export interface FilterState {

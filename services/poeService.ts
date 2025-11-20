@@ -347,6 +347,11 @@ export const fetchTradeData = async (
       const dustRatio84 = avgPriceChaos > 0 ? dbItem.dustValIlvl84 / avgPriceChaos : 0;
       const dustRatio84Q20 = avgPriceChaos > 0 ? dbItem.dustValIlvl84Q20 / avgPriceChaos : 0;
 
+      // Build Trade URL
+      const tradeUrl = searchResult.id 
+        ? `https://www.pathofexile.com/trade/search/${filter.league}/${searchResult.id}`
+        : undefined;
+
       onItemLoaded({
         id: `real-${i}`,
         name: dbItem.name,
@@ -360,7 +365,8 @@ export const fetchTradeData = async (
         dustValIlvl84Q20: dbItem.dustValIlvl84Q20,
         dustRatio84Q20: parseFloat(dustRatio84Q20.toFixed(0)),
 
-        icon: icon
+        icon: icon,
+        tradeUrl: tradeUrl
       });
 
     } catch (error: any) {

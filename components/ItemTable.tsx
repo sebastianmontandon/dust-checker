@@ -15,14 +15,14 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
     return sort.direction === 'asc' ? <span className="text-poe-gold ml-1">↑</span> : <span className="text-poe-gold ml-1">↓</span>;
   };
 
-  const HeaderCell = ({ field, label, align = 'left', className='' }: { field: keyof TradeItem, label: string, align?: string, className?: string }) => (
+  const HeaderCell = ({ field, label, align = 'left', className='' }: { field?: keyof TradeItem, label: string, align?: string, className?: string }) => (
     <th 
-      className={`py-3 px-3 text-${align} text-poe-text uppercase text-xs font-bold cursor-pointer hover:text-poe-gold transition-colors border-b border-poe-border bg-poe-panel bg-opacity-50 ${className}`}
-      onClick={() => onSort(field)}
+      className={`py-3 px-3 text-${align} text-poe-text uppercase text-xs font-bold border-b border-poe-border bg-poe-panel bg-opacity-50 ${field ? 'cursor-pointer hover:text-poe-gold transition-colors' : ''} ${className}`}
+      onClick={() => field && onSort(field)}
     >
-      <div className={`flex items-center ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex items-center ${align === 'right' ? 'justify-end' : 'justify-start'} ${align === 'center' ? 'justify-center' : ''}`}>
         {label}
-        {getSortIcon(field)}
+        {field && getSortIcon(field)}
       </div>
     </th>
   );
@@ -41,6 +41,7 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
         <thead>
           <tr>
             <HeaderCell field="name" label="Item" className="border-r border-poe-border" />
+            <HeaderCell label="Trade" align="center" className="border-r border-poe-border w-16" />
             <HeaderCell field="priceAmount" label="Price (Top 10)" align="right" className="border-r border-poe-border" />
             
             {/* Grupo ILVL 84 */}
@@ -54,7 +55,8 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
             </th>
           </tr>
           <tr>
-            {/* Subheaders vacíos para name/price */}
+            {/* Subheaders vacíos para name/trade/price */}
+            <th className="bg-poe-dark border-b border-poe-border border-r border-poe-border"></th>
             <th className="bg-poe-dark border-b border-poe-border border-r border-poe-border"></th>
             <th className="bg-poe-dark border-b border-poe-border border-r border-poe-border"></th>
 
@@ -73,7 +75,7 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
             return (
               <tr key={item.id} className="hover:bg-poe-panel transition-colors duration-150 group">
                 <td className="py-3 px-4 border-r border-poe-border">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {item.icon && <img src={item.icon} alt="" className="w-8 h-8 object-contain" />}
                     <div>
                       <div className="font-serif text-poe-gold text-sm group-hover:text-white transition-colors">
@@ -83,6 +85,28 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
                     </div>
                   </div>
                 </td>
+
+                {/* Trade Column */}
+                <td className="py-3 px-2 border-r border-poe-border text-center align-middle">
+                   {item.tradeUrl ? (
+                      <a 
+                        href={item.tradeUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        // Green Button Style (PoE Buy Button Aesthetic)
+                        className="relative inline-flex items-center justify-center w-9 h-9 bg-gradient-to-b from-[#0f1e0f] to-[#050a05] border border-[#2f452f] rounded-[3px] shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] hover:brightness-125 hover:border-[#4a6b4a] active:translate-y-[1px] transition-all duration-150 group/btn"
+                        title="Trade on Path of Exile"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#e2c08d] drop-shadow-md transform group-hover/btn:scale-110 transition-transform" fill="currentColor">
+                           {/* Trade / Exchange Icon (Two arrows) */}
+                           <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <span className="text-gray-600 text-xs">-</span>
+                    )}
+                </td>
+
                 <td className="py-3 px-4 text-right font-mono text-gray-300 border-r border-poe-border bg-poe-dark/30">
                   <div className="flex items-center justify-end gap-2">
                     {item.priceAmount}
