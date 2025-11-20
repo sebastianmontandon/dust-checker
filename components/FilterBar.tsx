@@ -10,9 +10,23 @@ interface FilterBarProps {
   onPause: () => void;
   isPaused: boolean;
   loading: boolean;
+  hasData: boolean;
+  saveDataLocally: boolean;
+  onToggleSaveData: (value: boolean) => void;
 }
 
-export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearch, onStop, onPause, isPaused, loading }) => {
+export const FilterBar: React.FC<FilterBarProps> = ({ 
+  filters, 
+  onChange, 
+  onSearch, 
+  onStop, 
+  onPause, 
+  isPaused, 
+  loading, 
+  hasData,
+  saveDataLocally,
+  onToggleSaveData
+}) => {
   
   const handleChange = (key: keyof FilterState, value: any) => {
     onChange({ ...filters, [key]: value });
@@ -42,7 +56,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
           <label className="text-poe-gold text-sm font-serif tracking-wider block">Payment Currency</label>
           <div className="relative">
             <select 
-              className="w-full h-10 bg-poe-dark border border-poe-border text-gray-200 px-2 pl-10 rounded focus:border-poe-gold focus:outline-none appearance-none"
+              className="w-full h-10 bg-poe-dark border border-poe-border text-gray-200 px-2 pl-10 rounded focus:border-poe-gold focus:outline-none appearance-none pr-10"
               value={filters.currency}
               onChange={(e) => handleChange('currency', e.target.value as Currency)}
               disabled={loading}
@@ -51,12 +65,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {/* Currency Icon Left */}
             <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center">
               <img 
                 src={CURRENCIES.find(c => c.id === filters.currency)?.icon} 
                 alt="currency" 
                 className="w-5 h-5"
               />
+            </div>
+            {/* Dropdown Arrow Right */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
         </div>
@@ -76,9 +97,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
           </select>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons & Toggle */}
         <div className="space-y-2 w-full">
-          <label className="text-sm font-serif tracking-wider opacity-0 select-none block">Action</label>
+          {/* Header Row: Label + Toggle */}
+          <div className="flex justify-between items-center h-5">
+             <label className="text-poe-gold text-sm font-serif tracking-wider block">Action</label>
+             
+             {/* Save Data Toggle */}
+             <div className="flex items-center gap-2 cursor-pointer group select-none" onClick={() => onToggleSaveData(!saveDataLocally)}>
+                <span className={`text-[10px] uppercase font-bold tracking-wider transition-colors ${saveDataLocally ? 'text-poe-gold' : 'text-gray-600 group-hover:text-gray-400'}`}>
+                   Save Data
+                </span>
+                <div className={`w-9 h-5 rounded-full border transition-colors relative ${saveDataLocally ? 'bg-poe-dark border-poe-gold' : 'bg-poe-dark border-gray-700'}`}>
+                   <div className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transition-all duration-200 ${saveDataLocally ? 'bg-poe-gold left-5' : 'bg-gray-600 left-1'}`}></div>
+                </div>
+             </div>
+          </div>
+
           <div className="flex items-stretch gap-2 h-10">
             {loading ? (
               <>
@@ -104,9 +139,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onSearc
             ) : (
               <button
                 onClick={onSearch}
-                className="w-full h-full font-serif tracking-widest font-bold rounded transition-all duration-300 bg-gradient-to-b from-poe-gold to-poe-goldDim text-black hover:scale-[1.02] hover:brightness-110 shadow-[0_0_15px_rgba(200,170,109,0.3)] flex items-center justify-center"
+                className={`w-full h-full font-serif tracking-widest font-bold rounded transition-all duration-300 flex items-center justify-center gap-2 text-black hover:scale-[1.02] hover:brightness-110 shadow-[0_0_15px_rgba(200,170,109,0.3)]
+                   ${hasData ? 'bg-gradient-to-b from-green-500 to-green-700 text-white border border-green-400' : 'bg-gradient-to-b from-poe-gold to-poe-goldDim text-black'}
+                `}
               >
-                SCAN MARKET
+                {hasData ? (
+                   <>
+                     <svg className="w-4 h-4 animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                     </svg>
+                     UPDATE MARKET DATA
+                   </>
+                ) : (
+                   "SCAN MARKET"
+                )}
               </button>
             )}
           </div>

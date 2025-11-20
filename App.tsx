@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { FilterBar } from './components/FilterBar';
 import { ItemTable } from './components/ItemTable';
 import { ProgressBar } from './components/ProgressBar';
@@ -7,17 +7,40 @@ import { fetchTradeData } from './services/poeService';
 import { CURRENCIES } from './constants';
 
 const App: React.FC = () => {
-  const [items, setItems] = useState<TradeItem[]>([]);
+  // 1. User Preference for Local Storage (Default: true)
+  const [saveDataLocally, setSaveDataLocally] = useState(() => {
+    const saved = localStorage.getItem('save_data_locally');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  // 2. Initialize Items (Lazy load only if preference is enabled)
+  const [items, setItems] = useState<TradeItem[]>(() => {
+    if (localStorage.getItem('save_data_locally') !== 'false') { // Default true logic matches above
+        const saved = localStorage.getItem('dust_items');
+        try {
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error("Error parsing local storage items", e);
+            return [];
+        }
+    }
+    return [];
+  });
+
   const [loading, setLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Ratio puede ser editado manualmente. Si es '' es automático.
-  const [currentRatio, setCurrentRatio] = useState<number | string>(150);
+  // 3. Initialize Ratio
+  const [currentRatio, setCurrentRatio] = useState<number | string>(() => {
+    if (localStorage.getItem('save_data_locally') !== 'false') {
+        const saved = localStorage.getItem('dust_ratio');
+        return saved ? JSON.parse(saved) : 150;
+    }
+    return 150;
+  });
   
   const abortControllerRef = useRef<AbortController | null>(null);
-  
-  // Use a Ref to track paused state inside the async loop, but useState for UI reactivity
   const isPausedRef = useRef(false);
   
   const [progress, setProgress] = useState({
@@ -38,6 +61,19 @@ const App: React.FC = () => {
     direction: 'desc'
   });
 
+  // 4. Persistence Effect
+  useEffect(() => {
+    localStorage.setItem('save_data_locally', JSON.stringify(saveDataLocally));
+    
+    if (saveDataLocally) {
+        localStorage.setItem('dust_items', JSON.stringify(items));
+        localStorage.setItem('dust_ratio', JSON.stringify(currentRatio));
+    } else {
+        localStorage.removeItem('dust_items');
+        localStorage.removeItem('dust_ratio');
+    }
+  }, [items, currentRatio, saveDataLocally]);
+
   const togglePause = () => {
     const nextState = !isPaused;
     setIsPaused(nextState);
@@ -50,7 +86,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Check paused callback for the service
   const checkPausedCallback = async () => {
     while (isPausedRef.current) {
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -65,7 +100,6 @@ const App: React.FC = () => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
     
-    // Reset pause state on new search
     setIsPaused(false);
     isPausedRef.current = false;
 
@@ -74,7 +108,6 @@ const App: React.FC = () => {
     setProgress({ current: 0, total: 0, currentItemName: '...' });
     
     try {
-      // Pasamos el ratio actual si es un número válido, sino undefined (para que lo busque)
       const manualRatio = typeof currentRatio === 'number' ? currentRatio : Number(currentRatio);
       
       await fetchTradeData(
@@ -139,7 +172,6 @@ const App: React.FC = () => {
         const valA = a[sort.field];
         const valB = b[sort.field];
         
-        // Handle potentially undefined values
         if (valA === undefined && valB === undefined) return 0;
         if (valA === undefined) return 1;
         if (valB === undefined) return -1;
@@ -152,7 +184,6 @@ const App: React.FC = () => {
     return result;
   }, [items, searchTerm, sort]);
 
-  // Icons for header
   const divineIcon = CURRENCIES.find(c => c.id === Currency.DIVINE)?.icon;
   const chaosIcon = CURRENCIES.find(c => c.id === Currency.CHAOS)?.icon;
 
@@ -176,14 +207,12 @@ const App: React.FC = () => {
                 <label className="text-[10px] uppercase text-poe-goldDim tracking-wider mb-1">Divine Ratio (Editable)</label>
                 <div className="flex items-center bg-black/40 rounded-md px-3 py-1.5 border border-poe-border shadow-inner h-10">
                     
-                    {/* Divine Icon */}
                     <div className="flex items-center mr-3">
                       <span className="text-white font-bold mr-1">1</span>
                       <img src={divineIcon} alt="Divine" className="w-8 h-8 object-contain drop-shadow-lg" />
                       <span className="text-poe-gold mx-2 text-lg font-bold">=</span>
                     </div>
 
-                    {/* Input Control */}
                     <div className="flex items-center bg-poe-dark rounded border border-poe-border/50 h-8">
                       <button 
                         onClick={() => adjustRatio(-1)}
@@ -205,7 +234,6 @@ const App: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Chaos Icon */}
                     <div className="ml-3">
                       <img src={chaosIcon} alt="Chaos" className="w-8 h-8 object-contain drop-shadow-lg" />
                     </div>
@@ -223,6 +251,9 @@ const App: React.FC = () => {
           onPause={togglePause}
           isPaused={isPaused}
           loading={loading}
+          hasData={items.length > 0}
+          saveDataLocally={saveDataLocally}
+          onToggleSaveData={setSaveDataLocally}
         />
 
         {/* Progress */}
