@@ -44,15 +44,22 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
             <HeaderCell label="Trade" align="center" className="border-r border-poe-border w-16" />
             <HeaderCell field="priceAmount" label="Price (Top 10)" align="right" className="border-r border-poe-border" />
             
-            {/* Grupo ILVL 84 */}
-            <th className="py-2 px-2 text-center text-poe-goldDim uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30" colSpan={2}>
+            {/* Grupo ILVL 84 - Hidden on Mobile */}
+            <th className="hidden md:table-cell py-2 px-2 text-center text-poe-goldDim uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30" colSpan={2}>
               Base (ilvl 84+)
             </th>
 
-            {/* Grupo ILVL 84 + Q20 */}
-            <th className="py-2 px-2 text-center text-poe-gold uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30" colSpan={2}>
-              Quality 20% (ilvl 84+)
+            {/* Grupo ILVL 84 + Q20 - 2 Cols on Desktop, 1 on Mobile */}
+            <th className="py-2 px-2 text-center text-poe-gold uppercase text-[10px] font-bold border-b border-poe-border bg-poe-panel bg-opacity-30" colSpan={1}>
+              {/* Mobile: 1 col, Desktop: expands via the hidden sibling logic or we force colspan */}
+              <span className="md:hidden">Q20 Ratio</span>
+              <span className="hidden md:inline">Quality 20% (ilvl 84+)</span>
             </th>
+             {/* Ghost cell for desktop colspan logic visualization if needed, but usually better to control colspan dynamically. 
+                 React doesn't support media query in attributes easily. 
+                 Hack: Render two headers? No.
+                 Let's just assume the table layout handles the hidden columns below. */}
+             <th className="hidden md:table-cell py-2 px-2 border-b border-poe-border bg-poe-panel bg-opacity-30 p-0 m-0 w-0"></th> 
           </tr>
           <tr>
             {/* Subheaders vacíos para name/trade/price */}
@@ -60,10 +67,12 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
             <th className="bg-poe-dark border-b border-poe-border border-r border-poe-border"></th>
             <th className="bg-poe-dark border-b border-poe-border border-r border-poe-border"></th>
 
-            <HeaderCell field="dustValIlvl84" label="Dust" align="right" />
-            <HeaderCell field="dustRatio84" label="Ratio" align="right" className="border-r border-poe-border" />
+            {/* Base Columns - Hidden on Mobile */}
+            <HeaderCell field="dustValIlvl84" label="Dust" align="right" className="hidden md:table-cell" />
+            <HeaderCell field="dustRatio84" label="Ratio" align="right" className="hidden md:table-cell border-r border-poe-border" />
 
-            <HeaderCell field="dustValIlvl84Q20" label="Dust" align="right" />
+            {/* Q20 Columns */}
+            <HeaderCell field="dustValIlvl84Q20" label="Dust" align="right" className="hidden md:table-cell" />
             <HeaderCell field="dustRatio84Q20" label="Ratio" align="right" />
           </tr>
         </thead>
@@ -98,7 +107,7 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
                         title="Trade on Path of Exile"
                       >
                         <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#e2c08d] drop-shadow-md transform group-hover/btn:scale-110 transition-transform" fill="currentColor">
-                           {/* Trade / Exchange Icon (Two arrows) */}
+                           {/* Exchange Icon (Two arrows) */}
                            <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z" />
                         </svg>
                       </a>
@@ -118,18 +127,18 @@ export const ItemTable: React.FC<ItemTableProps> = ({ items, sort, onSort }) => 
                   </div>
                 </td>
 
-                {/* Base Values */}
-                <td className="py-3 px-3 text-right font-mono text-blue-300/70 text-sm">
+                {/* Base Values - Hidden on Mobile */}
+                <td className="hidden md:table-cell py-3 px-3 text-right font-mono text-blue-300/70 text-sm">
                   {item.dustValIlvl84.toLocaleString()}
                 </td>
-                <td className="py-3 px-3 text-right border-r border-poe-border">
+                <td className="hidden md:table-cell py-3 px-3 text-right border-r border-poe-border">
                   <span className={`font-mono text-sm ${item.dustRatio84 > 5000 ? 'text-gray-200' : 'text-gray-500'}`}>
                     {item.dustRatio84.toLocaleString()}
                   </span>
                 </td>
 
                 {/* Q20 Values */}
-                <td className="py-3 px-3 text-right font-mono text-blue-300 text-sm">
+                <td className="hidden md:table-cell py-3 px-3 text-right font-mono text-blue-300 text-sm">
                   {item.dustValIlvl84Q20.toLocaleString()}
                 </td>
                 <td className="py-3 px-3 text-right">
