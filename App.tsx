@@ -183,7 +183,7 @@ const App: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-end gap-6">
+          <div className="flex items-center gap-6">
             {/* Ratio Input */}
             <div className="flex flex-col items-center">
                 <label className="text-[10px] uppercase text-poe-goldDim tracking-wider mb-1">Divine Ratio (Editable)</label>
@@ -258,7 +258,7 @@ const App: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-poe-panel border border-poe-border text-gray-200 p-3 pl-10 rounded shadow-inner focus:border-poe-gold focus:outline-none transition-colors focus:bg-poe-dark"
                 />
-                <div className="absolute left-3 top-3.5 pointer-events-none text-poe-goldDim">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-poe-goldDim">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                   </svg>
