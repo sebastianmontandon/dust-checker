@@ -205,13 +205,17 @@ const App: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-poe-border pb-6">
-          <div className="flex flex-col items-center md:items-start">
-            <h1 className="text-3xl md:text-4xl font-serif text-poe-gold tracking-widest drop-shadow-md text-center md:text-left">
-              EXILE DUST CALCULATOR
-            </h1>
-            <p className="text-poe-goldDim text-sm uppercase tracking-widest text-center md:text-left mt-1">
-              Efficiency Tool for <span className="text-white font-bold">{filters.league}</span>
-            </p>
+          <div className="flex items-center gap-5">
+            {/* App Icon Removed as requested */}
+            
+            <div className="flex flex-col items-center md:items-start">
+              <h1 className="text-3xl md:text-4xl font-serif text-poe-gold tracking-widest drop-shadow-md text-center md:text-left">
+                EXILE DUST CALCULATOR
+              </h1>
+              <p className="text-poe-goldDim text-sm uppercase tracking-widest text-center md:text-left mt-1">
+                Efficiency Tool for <span className="text-white font-bold">{filters.league}</span>
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center h-full">
