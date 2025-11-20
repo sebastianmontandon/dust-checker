@@ -30,6 +30,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [githubStars, setGithubStars] = useState<number | null>(null);
   
   // 3. Initialize Ratio
   const [currentRatio, setCurrentRatio] = useState<number | string>(() => {
@@ -60,6 +61,18 @@ const App: React.FC = () => {
     field: 'dustRatio84Q20',
     direction: 'desc'
   });
+
+  // Fetch GitHub Stars
+  useEffect(() => {
+    fetch('https://api.github.com/repos/sebastianmontandon/dust-checker')
+      .then(res => res.json())
+      .then(data => {
+        if (data.stargazers_count !== undefined) {
+          setGithubStars(data.stargazers_count);
+        }
+      })
+      .catch(err => console.error("Failed to fetch stars", err));
+  }, []);
 
   // 4. Persistence Effect
   useEffect(() => {
@@ -296,7 +309,7 @@ const App: React.FC = () => {
            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-poe-goldDim to-transparent opacity-50"></div>
            
            <h2 className="text-poe-gold font-serif text-xl mb-4 tracking-widest flex items-center justify-center gap-3">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-poe-gold">
                <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
              </svg>
              COMMUNITY PROJECT
@@ -310,15 +323,29 @@ const App: React.FC = () => {
              <span className="text-poe-gold font-medium">Support the project by giving it a star!</span>
            </p>
 
-           <a 
-             href="https://github.com/sebastianmontandon/dust-checker" 
-             target="_blank" 
-             rel="noopener noreferrer"
-             className="inline-flex items-center gap-3 px-8 py-3 border border-poe-goldDim text-poe-gold hover:bg-poe-gold hover:text-black transition-all duration-300 rounded font-serif tracking-wider text-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(200,170,109,0.4)]"
-           >
-             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-             GITHUB REPOSITORY
-           </a>
+           <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+             {/* Repository Button */}
+             <a 
+               href="https://github.com/sebastianmontandon/dust-checker" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="inline-flex items-center gap-3 px-8 py-3 border border-poe-goldDim text-poe-gold hover:bg-poe-gold hover:text-black transition-all duration-300 rounded font-serif tracking-wider text-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(200,170,109,0.4)]"
+             >
+               <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+               GITHUB REPOSITORY
+             </a>
+             
+             {/* Custom Star Button (Matches App Aesthetic) */}
+             <a
+               href="https://github.com/sebastianmontandon/dust-checker"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="inline-flex items-center gap-3 px-8 py-3 border border-poe-goldDim text-poe-gold hover:bg-poe-gold hover:text-black transition-all duration-300 rounded font-serif tracking-wider text-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(200,170,109,0.4)]"
+             >
+               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+               STAR PROJECT {githubStars !== null ? `(${githubStars})` : ''}
+             </a>
+           </div>
         </div>
 
         {/* Footer */}
